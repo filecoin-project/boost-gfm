@@ -687,6 +687,11 @@ func TestHandleQueryStream(t *testing.T) {
 		},
 	}
 
+	expectedPieceNoDeals := piecestore.PieceInfo{
+		PieceCID: expectedPieceCID,
+		Deals:    []piecestore.DealInfo{},
+	}
+
 	expectedAddress := address.TestAddress2
 	expectedPricePerByte := abi.NewTokenAmount(4321)
 	expectedPaymentInterval := uint64(4567)
@@ -950,6 +955,23 @@ func TestHandleQueryStream(t *testing.T) {
 				Status:        retrievalmarket.QueryResponseError,
 				PieceCIDFound: retrievalmarket.QueryItemUnavailable,
 				Message:       "failed to fetch piece to retrieve from: refusing to process identity CID with too many links (33)",
+			},
+			expectedPricePerByte:            big.Zero(),
+			expectedPaymentInterval:         0,
+			expectedPaymentIntervalIncrease: 0,
+			expectedUnsealPrice:             big.Zero(),
+		},
+
+		{name: "When piece has no deals",
+			expFunc: func(t *testing.T, pieceStore *tut.TestPieceStore, dagStore *tut.MockDagStoreWrapper) {
+				pieceStore.ExpectPiece(expectedPieceCID, expectedPieceNoDeals)
+				dagStore.AddBlockToPieceIndex(payloadCID, expectedPieceCID)
+			},
+			query: retrievalmarket.Query{PayloadCID: payloadCID},
+			expResp: retrievalmarket.QueryResponse{
+				Status:        retrievalmarket.QueryResponseError,
+				PieceCIDFound: retrievalmarket.QueryItemUnavailable,
+				Message:       "failed to fetch deals for piece: piece has 0 deals",
 			},
 			expectedPricePerByte:            big.Zero(),
 			expectedPaymentInterval:         0,

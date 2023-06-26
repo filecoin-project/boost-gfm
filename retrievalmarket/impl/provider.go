@@ -401,6 +401,13 @@ func (p *Provider) HandleQueryStream(stream rmnet.RetrievalQueryStream) {
 		sendResp(answer)
 		return
 	}
+	if len(pieceInfo.Deals) == 0 {
+		log.Errorf("Retrieval query: piece has 0 deals")
+		answer.Status = retrievalmarket.QueryResponseError
+		answer.Message = fmt.Sprintf("failed to fetch deals for piece: piece has 0 deals")
+		sendResp(answer)
+		return
+	}
 
 	answer.Status = retrievalmarket.QueryResponseAvailable
 	answer.Size = uint64(pieceInfo.Deals[0].Length.Unpadded()) // TODO: verify on intermediate
