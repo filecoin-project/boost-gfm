@@ -3,6 +3,7 @@ package storedask
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"sync"
 
 	"github.com/ipfs/go-datastore"
@@ -131,10 +132,29 @@ func (s *StoredAsk) SetAsk(price abi.TokenAmount, verifiedPrice abi.TokenAmount,
 		option(ask)
 	}
 
+	log.Infof("New storage ask:\nPrice: %s\nVerifiedPrice: %s\nTimestamp: %s\nExpiry: %d\n"+
+		"Miner: %s\nSeqNo: %d\nMinPieceSize: %d\nMaxPieceSize: %d", ask.Price.String(),
+		ask.VerifiedPrice.String(), ask.Timestamp.String(), ask.Expiry, ask.Miner.String(), ask.SeqNo,
+		ask.MinPieceSize, ask.MaxPieceSize)
+
 	sig, err := s.sign(ctx, ask)
 	if err != nil {
 		return err
 	}
+
+	sigType, err := sig.Type.Name()
+	if err != nil {
+		return err
+	}
+
+	sigs, err := sig.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	log.Infof("New signature for the new storage ask:\nType: %s\nData: %s\nSigString: %s",
+		sigType, hex.EncodeToString(sig.Data), hex.EncodeToString(sigs))
+
 	return s.saveAsk(&storagemarket.SignedStorageAsk{
 		Ask:       ask,
 		Signature: sig,
